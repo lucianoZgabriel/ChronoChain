@@ -1,0 +1,22 @@
+{
+  "name": "chronochain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./dist/blockchain.js",
+    "build": "npx tsc",
+    "dev": "npx nodemon --watch './src/' --exec 'npx ts-node ./src/blockchain.ts -e ts'",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^29.5.13",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
