@@ -8,12 +8,12 @@ export default class Block {
   timestamp: number;
   data: string;
 
-  constructor(index: number, previousHash: string, data: string) {
-    this.index = index;
-    this.previousHash = previousHash;
-    this.timestamp = Date.now();
-    this.data = data;
-    this.hash = this.getHash();
+  constructor(block?: Block) {
+    this.index = block?.index || 0;
+    this.previousHash = block?.previousHash || "";
+    this.timestamp = block?.timestamp || Date.now();
+    this.data = block?.data || "";
+    this.hash = block?.hash || this.getHash();
   }
 
   getHash(): string {

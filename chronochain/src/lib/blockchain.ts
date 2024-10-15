@@ -8,7 +8,7 @@ export default class Blockchain {
   nextIndex: number = 0;
 
   constructor() {
-    this.blocks = [new Block(this.nextIndex, "0", "Genesis block")];
+    this.blocks = [new Block({index:this.nextIndex, previousHash:"0", data:"Genesis block"} as Block)];
     this.nextIndex++;
   }
 
@@ -24,6 +24,10 @@ export default class Blockchain {
     this.blocks.push(block);
     this.nextIndex++;
     return new Validation();
+  }
+
+  getBlock(hash: string): Block | undefined {
+    return this.blocks.find(b => b.hash === hash);
   }
 
   isValid(): Validation {
