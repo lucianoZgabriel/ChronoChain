@@ -6,9 +6,16 @@ import Validation from "./validation";
 export default class Blockchain {
   blocks: Block[];
   nextIndex: number = 0;
+  static readonly DIFFICULTY_FACTOR = 5;
 
   constructor() {
-    this.blocks = [new Block({index:this.nextIndex, previousHash:"0", data:"Genesis block"} as Block)];
+    this.blocks = [
+      new Block({
+        index: this.nextIndex,
+        previousHash: "0",
+        data: "Genesis block",
+      } as Block),
+    ];
     this.nextIndex++;
   }
 
@@ -18,7 +25,11 @@ export default class Blockchain {
 
   addBlock(block: Block): Validation {
     const lastBlock = this.getLastBlock();
-    const validation = block.isValid(lastBlock.hash, lastBlock.index);
+    const validation = block.isValid(
+      lastBlock.hash,
+      lastBlock.index,
+      this.getDifficulty()
+    );
     if (!validation.success)
       return new Validation(false, `Invalid block: ${validation.message}`);
     this.blocks.push(block);
@@ -27,7 +38,11 @@ export default class Blockchain {
   }
 
   getBlock(hash: string): Block | undefined {
-    return this.blocks.find(b => b.hash === hash);
+    return this.blocks.find((b) => b.hash === hash);
+  }
+
+  getDifficulty(): number {
+    return Math.ceil(this.blocks.length / Blockchain.DIFFICULTY_FACTOR);
   }
 
   isValid(): Validation {
@@ -36,7 +51,8 @@ export default class Blockchain {
       const previousBlock = this.blocks[i - 1];
       const validation = currentBlock.isValid(
         previousBlock.hash,
-        previousBlock.index
+        previousBlock.index,
+        this.getDifficulty()
       );
       if (!validation.success)
         return new Validation(
