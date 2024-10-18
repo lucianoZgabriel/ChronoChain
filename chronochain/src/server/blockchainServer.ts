@@ -20,6 +20,10 @@ app.get("/status", (req, res, next) => {
   });
 });
 
+app.get("/blocks/next", (req, res, next) => {
+  res.json(blockchain.getNextBlock());
+});
+
 app.get("/blocks/:indexOrHash", (req, res, next) => {
   let block;
   if (/^[0-9]+$/.test(req.params.indexOrHash)) {
@@ -50,6 +54,8 @@ app.post("/blocks", (req, res, next) => {
 });
 
 if (process.argv.includes("--run"))
-  app.listen(PORT, () => { console.log(`Blockchain server is running on port ${PORT}`); });
+  app.listen(PORT, () => {
+    console.log(`Blockchain server is running on port ${PORT}`);
+  });
 
 export { app };
