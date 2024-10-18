@@ -1,5 +1,6 @@
 import e from "express";
 import Block from "../src/lib/block";
+import BlockInfo from "../src/lib/blockInfo";
 
 describe("Block tests", () => {
   const difficulty = 0;
@@ -22,6 +23,19 @@ describe("Block tests", () => {
     expect(valid.success).toBeTruthy();
   });
 
+  it("should be valid", () => {
+    const block = Block.fromBlockInfo({
+      index: 1,
+      previousHash: genesis.hash,
+      difficulty: difficulty,
+      maxDifficulty: 10,
+      feePerTx: 1,
+      data: "block1",
+    } as BlockInfo);
+    block.mine(difficulty, miner);
+    const valid = block.isValid(genesis.hash, genesis.index, difficulty);
+    expect(valid.success).toBeTruthy();
+  });
   it("should NOT be valid (fallback)", () => {
     const block = new Block();
     expect(

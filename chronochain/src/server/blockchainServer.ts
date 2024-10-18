@@ -1,12 +1,17 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import morgan from "morgan";
 import Blockchain from "../lib/blockchain";
 import Block from "../lib/block";
 
 const app = express();
-const PORT = 3000;
+const PORT = parseInt((process.env.PORT as string) || "3000");
 
+/* c8 ignore start */
 if (process.argv.includes("--run")) app.use(morgan("tiny"));
+/* c8 ignore end */
 
 app.use(express.json());
 
@@ -53,9 +58,11 @@ app.post("/blocks", (req, res, next) => {
   }
 });
 
+/* c8 ignore start */
 if (process.argv.includes("--run"))
   app.listen(PORT, () => {
     console.log(`Blockchain server is running on port ${PORT}`);
   });
+/* c8 ignore end */
 
 export { app };
