@@ -1,8 +1,10 @@
 import e from "express";
 import Block from "../src/lib/block";
 import Blockchain from "../src/lib/blockchain";
+import Transaction from "../src/lib/transaction";
 
 jest.mock("../src/lib/block");
+jest.mock("../src/lib/transaction");
 
 describe("Blockchain tests", () => {
   it("should have genesis block", () => {
@@ -26,7 +28,11 @@ describe("Blockchain tests", () => {
     const block = new Block({
       index: 1,
       previousHash: blockchain.getLastBlock().hash,
-      data: "block1",
+      transactions: [
+        new Transaction({
+          data: new Date().toString(),
+        } as Transaction),
+      ],
     } as Block);
     const blockAdded = blockchain.addBlock(block);
     expect(blockAdded.success).toBe(true);
@@ -38,7 +44,11 @@ describe("Blockchain tests", () => {
       new Block({
         index: 1,
         previousHash: blockchain.getLastBlock().hash,
-        data: "block1",
+        transactions: [
+          new Transaction({
+            data: new Date().toString(),
+          } as Transaction),
+        ],
       } as Block)
     );
     expect(blockchain.isValid().success).toBe(true);
@@ -50,7 +60,11 @@ describe("Blockchain tests", () => {
       new Block({
         index: 1,
         previousHash: blockchain.getLastBlock().hash,
-        data: "block1",
+        transactions: [
+          new Transaction({
+            data: new Date().toString(),
+          } as Transaction),
+        ],
       } as Block)
     );
     blockchain.blocks[1].index = -1;
@@ -62,7 +76,11 @@ describe("Blockchain tests", () => {
     const block = new Block({
       index: -1,
       previousHash: blockchain.getLastBlock().hash,
-      data: "block1",
+      transactions: [
+        new Transaction({
+          data: new Date().toString(),
+        } as Transaction),
+      ],
     } as Block);
     const blockAdded = blockchain.addBlock(block);
     expect(blockAdded.success).toBe(false);
