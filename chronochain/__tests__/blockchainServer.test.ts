@@ -1,6 +1,7 @@
 import request from "supertest";
 import { app } from "../src/server/blockchainServer";
 import Block from "../src/lib/block";
+import Transaction from "../src/lib/transaction";
 
 jest.mock("../src/lib/blockchain");
 jest.mock("../src/lib/block");
@@ -51,5 +52,20 @@ describe("BlockchainServer tests", () => {
     const block = new Block({ index: -1 } as Block);
     const response = await request(app).post("/blocks").send(block);
     expect(response.status).toBe(400);
+  });
+  
+  test("GET /transactions/:hash - should get a transaction", async () => {
+    const response = await request(app).get("/transactions/abc");
+    expect(response.status).toBe(200);
+    expect(response.body.mempoolIndex).toBe(0);
+  });
+
+  test("POST /transactions - should add a transaction", async () => {
+    const tx = new Transaction({
+      data: "tx1"
+    } as Transaction);
+
+    const response = await request(app).post("/transactions").send(tx);
+    expect(response.status).toBe(201);
   });
 });
