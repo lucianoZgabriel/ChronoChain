@@ -23,16 +23,112 @@ describe("Blockchain tests", () => {
     expect(block).toBeTruthy();
   });
 
+  it("should add transaction", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+      hash: "xyz",
+    } as Transaction);
+
+    const validation = blockchain.addTransaction(tx);
+    expect(validation.success).toBe(true);
+  });
+
+  it("should NOT add transaction (invalid tx)", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "",
+      hash: "xyz",
+    } as Transaction);
+
+    const validation = blockchain.addTransaction(tx);
+    expect(validation.success).toBe(false);
+  });
+
+  it("should NOT add transaction (duplicated in blockchain)", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+      hash: "xyz",
+    } as Transaction);
+
+    blockchain.blocks.push(
+      new Block({
+        transactions: [tx],
+      } as Block)
+    );
+
+    const validation = blockchain.addTransaction(tx);
+    expect(validation.success).toBe(false);
+  });
+
+  it("should NOT add transaction (duplicated in mempool)", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+      hash: "xyz",
+    } as Transaction);
+
+    blockchain.mempool.push(tx);
+
+    const validation = blockchain.addTransaction(tx);
+    expect(validation.success).toBe(false);
+  });
+
+  it("should get transaction (mempool)", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+      hash: "xyz",
+    } as Transaction);
+
+    blockchain.mempool.push(tx);
+
+    const search = blockchain.getTransaction("xyz");
+    expect(search.mempoolIndex).toBe(0);
+  });
+
+  it("should get transaction (blockchain)", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+      hash: "xyz",
+    } as Transaction);
+
+    blockchain.blocks.push(
+      new Block({
+        transactions: [tx],
+      } as Block)
+    );
+
+    const search = blockchain.getTransaction("xyz");
+    expect(search.blockIndex).toBe(1);
+  });
+
+  it("should NOT get transaction", () => {
+    const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+      hash: "xyz",
+    } as Transaction);
+
+    const search = blockchain.getTransaction("xyz");
+    expect(search.mempoolIndex).toBe(-1);
+    expect(search.blockIndex).toBe(-1);
+  });
+
   it("should be valid (new block)", () => {
     const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+    } as Transaction);
+
+    blockchain.mempool.push(tx);
+
     const block = new Block({
       index: 1,
       previousHash: blockchain.getLastBlock().hash,
-      transactions: [
-        new Transaction({
-          data: new Date().toString(),
-        } as Transaction),
-      ],
+      transactions: [tx],
     } as Block);
     const blockAdded = blockchain.addBlock(block);
     expect(blockAdded.success).toBe(true);
@@ -56,15 +152,17 @@ describe("Blockchain tests", () => {
 
   it("should NOT be valid (invalid block)", () => {
     const blockchain = new Blockchain();
+    const tx = new Transaction({
+      data: "tx1",
+    } as Transaction);
+
+    blockchain.mempool.push(tx);
+
     blockchain.addBlock(
       new Block({
         index: 1,
         previousHash: blockchain.getLastBlock().hash,
-        transactions: [
-          new Transaction({
-            data: new Date().toString(),
-          } as Transaction),
-        ],
+        transactions: [tx],
       } as Block)
     );
     blockchain.blocks[1].index = -1;
@@ -88,7 +186,15 @@ describe("Blockchain tests", () => {
 
   it("should get next block info", () => {
     const blockchain = new Blockchain();
+    blockchain.mempool.push(new Transaction());
+
     const info = blockchain.getNextBlock();
-    expect(info.index).toBe(1);
+    expect(info ? info.index : 0).toBe(1);
+  });
+
+  it("should NOT get next block info", () => {
+    const blockchain = new Blockchain();
+    const info = blockchain.getNextBlock();
+    expect(info).toBeNull();
   });
 });
