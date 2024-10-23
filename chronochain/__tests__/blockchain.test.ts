@@ -2,9 +2,11 @@ import e from "express";
 import Block from "../src/lib/block";
 import Blockchain from "../src/lib/blockchain";
 import Transaction from "../src/lib/transaction";
+import TransactionInput from "../src/lib/transactionInput";
 
 jest.mock("../src/lib/block");
 jest.mock("../src/lib/transaction");
+jest.mock("../src/lib/transactionInput");
 
 describe("Blockchain tests", () => {
   it("should have genesis block", () => {
@@ -26,7 +28,7 @@ describe("Blockchain tests", () => {
   it("should add transaction", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
       hash: "xyz",
     } as Transaction);
 
@@ -36,8 +38,10 @@ describe("Blockchain tests", () => {
 
   it("should NOT add transaction (invalid tx)", () => {
     const blockchain = new Blockchain();
+    const txInput = new TransactionInput();
+    txInput.amount = -1;
     const tx = new Transaction({
-      data: "",
+      txInput,
       hash: "xyz",
     } as Transaction);
 
@@ -48,7 +52,7 @@ describe("Blockchain tests", () => {
   it("should NOT add transaction (duplicated in blockchain)", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
       hash: "xyz",
     } as Transaction);
 
@@ -65,7 +69,7 @@ describe("Blockchain tests", () => {
   it("should NOT add transaction (duplicated in mempool)", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
       hash: "xyz",
     } as Transaction);
 
@@ -78,7 +82,7 @@ describe("Blockchain tests", () => {
   it("should get transaction (mempool)", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
       hash: "xyz",
     } as Transaction);
 
@@ -91,7 +95,7 @@ describe("Blockchain tests", () => {
   it("should get transaction (blockchain)", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
       hash: "xyz",
     } as Transaction);
 
@@ -108,7 +112,7 @@ describe("Blockchain tests", () => {
   it("should NOT get transaction", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
       hash: "xyz",
     } as Transaction);
 
@@ -120,7 +124,7 @@ describe("Blockchain tests", () => {
   it("should be valid (new block)", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
     } as Transaction);
 
     blockchain.mempool.push(tx);
@@ -142,7 +146,7 @@ describe("Blockchain tests", () => {
         previousHash: blockchain.getLastBlock().hash,
         transactions: [
           new Transaction({
-            data: new Date().toString(),
+            txInput: new TransactionInput(),
           } as Transaction),
         ],
       } as Block)
@@ -153,7 +157,7 @@ describe("Blockchain tests", () => {
   it("should NOT be valid (invalid block)", () => {
     const blockchain = new Blockchain();
     const tx = new Transaction({
-      data: "tx1",
+      txInput: new TransactionInput(),
     } as Transaction);
 
     blockchain.mempool.push(tx);
@@ -176,7 +180,7 @@ describe("Blockchain tests", () => {
       previousHash: blockchain.getLastBlock().hash,
       transactions: [
         new Transaction({
-          data: new Date().toString(),
+          txInput: new TransactionInput(),
         } as Transaction),
       ],
     } as Block);

@@ -9,7 +9,8 @@
     "dev": "npx nodemon --watch './src/' --exec 'npx ts-node ./src/blockchain.ts -e ts'",
     "test": "jest",
     "blockchain": "ts-node ./src/server/blockchainServer.ts --run",
-    "miner": "ts-node ./src/client/minerClient.ts"
+    "miner": "ts-node ./src/client/minerClient.ts",
+    "wallet": "ts-node ./src/client/walletClient.ts"
   },
   "keywords": [],
   "author": "",
@@ -30,7 +31,9 @@
     "axios": "^1.7.7",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
+    "ecpair": "^3.0.0-rc.0",
     "express": "^4.21.1",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "tiny-secp256k1": "^2.2.3"
   }
 }
