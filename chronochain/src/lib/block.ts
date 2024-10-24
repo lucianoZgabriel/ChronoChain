@@ -55,11 +55,19 @@ export default class Block {
     difficulty: number
   ): Validation {
     if (this.transactions && this.transactions.length) {
-      if (
-        this.transactions.filter((tx) => tx.type === TransactionType.FEE)
-          .length > 1
-      )
+      const feeTxs = this.transactions.filter(
+        (tx) => tx.type === TransactionType.FEE
+      );
+      if (!feeTxs.length)
+        return new Validation(false, "Invalid fee transaction: not found");
+      if (feeTxs.length > 1)
         return new Validation(false, "Invalid fee transaction");
+
+      if (feeTxs[0].to !== this.miner)
+        return new Validation(
+          false,
+          "Invalid fee transaction: miner does not match"
+        );
 
       const validation = this.transactions.map((tx) => tx.isValid());
       const errors = validation.filter((v) => !v.success).map((v) => v.message);

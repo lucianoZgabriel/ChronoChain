@@ -84,7 +84,7 @@ export default class Blockchain {
         txInput: new TransactionInput(),
       } as Transaction),
     ];
-    const difficulty = this.getDifficulty();
+    const difficulty = 1;
     const previousHash = this.getLastBlock().hash;
     const index = this.blocks.length;
     const feePerTx = this.getFeePerTx();
