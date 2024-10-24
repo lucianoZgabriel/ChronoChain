@@ -69,8 +69,8 @@ export default class Blockchain {
     const mempoolIndex = this.mempool.findIndex((t) => t.hash === hash);
     if (mempoolIndex !== -1) {
       return {
-        transaction: this.mempool[mempoolIndex],
         mempoolIndex,
+        transaction: this.mempool[mempoolIndex],
       } as TrasactionSearch;
     }
 
@@ -94,6 +94,19 @@ export default class Blockchain {
   }
 
   addTransaction(transaction: Transaction): Validation {
+    if (transaction.txInput) {
+      const from = transaction.txInput.fromAddress;
+      const pending = this.mempool
+        .map((tx) => tx.txInput)
+        .filter((txInput) => txInput!.fromAddress === from);
+      if (pending.length > 0) {
+        return new Validation(
+          false,
+          "There is a pending transaction from the same address"
+        );
+      }
+      //TODO: check if the address has enough balance
+    }
     const validation = transaction.isValid();
     if (!validation.success)
       return new Validation(
@@ -106,8 +119,6 @@ export default class Blockchain {
       )
     )
       return new Validation(false, "Transaction already in blockchain");
-    if (this.mempool.some((tx) => tx.hash === transaction.hash))
-      return new Validation(false, "Transaction already in mempool");
 
     this.mempool.push(transaction);
     return new Validation(true, transaction.hash);
