@@ -15,22 +15,18 @@ export default class Blockchain {
   static readonly DIFFICULTY_FACTOR = 5;
   static readonly MAX_DIFFICULTY = 62;
 
-  constructor() {
-    this.mempool = [];
-    this.blocks = [
+  constructor(miner: string) {
+    this.blocks = [];
+    this.mempool = [new Transaction()];
+    this.blocks.push(
       new Block({
         hash: "abc",
-        index: this.nextIndex,
-        previousHash: "0",
-        transactions: [
-          new Transaction({
-            txInput: new TransactionInput(),
-            type: TransactionType.FEE,
-          } as Transaction),
-        ],
+        index: 0,
+        previousHash: "",
+        miner,
         timestamp: Date.now(),
-      } as Block),
-    ];
+      } as Block)
+    );
     this.nextIndex++;
   }
 
@@ -54,15 +50,19 @@ export default class Blockchain {
   }
 
   getTransaction(hash: string): TransactionSearch {
+    if (hash === "-1")
+      return {
+        mempoolIndex: -1,
+        blockIndex: -1,
+      } as TransactionSearch;
     return {
       mempoolIndex: 0,
-      transaction: {
-        hash,
-      },
+      transaction: new Transaction(),
     } as TransactionSearch;
   }
 
   getBlock(hash: string): Block | undefined {
+    if (!hash || hash === "-1") return undefined;
     return this.blocks.find((b) => b.hash === hash);
   }
 
@@ -79,23 +79,13 @@ export default class Blockchain {
   }
 
   getNextBlock(): BlockInfo {
-    const transactions = [
-      new Transaction({
-        txInput: new TransactionInput(),
-      } as Transaction),
-    ];
-    const difficulty = 1;
-    const previousHash = this.getLastBlock().hash;
-    const index = this.blocks.length;
-    const feePerTx = this.getFeePerTx();
-    const maxDifficulty = Blockchain.MAX_DIFFICULTY;
     return {
-      index,
-      previousHash,
-      difficulty,
-      maxDifficulty,
-      feePerTx,
-      transactions,
+      transactions: this.mempool.slice(0, 2),
+      index: this.blocks.length,
+      previousHash: this.getLastBlock().hash,
+      difficulty: 1,
+      feePerTx: this.getFeePerTx(),
+      maxDifficulty: 62,
     };
   }
 }

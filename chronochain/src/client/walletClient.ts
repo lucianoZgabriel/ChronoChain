@@ -7,6 +7,7 @@ import Wallet from "../lib/wallet";
 import Transaction from "../lib/transaction";
 import TransactionType from "../lib/transactionType";
 import TransactionInput from "../lib/transactionInput";
+import TransactionOutput from "../lib/transactionOutput";
 
 const BLOCKCHAIN_SERVER = process.env.BLOCKCHAIN_SERVER;
 
@@ -16,6 +17,12 @@ let myWalletPrivateKey = "";
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
+  terminal: true,
+});
+
+rl.on("close", () => {
+  console.log("Interface closed");
+  process.exit(0);
 });
 
 function menu() {
@@ -124,17 +131,39 @@ function sendTransaction() {
         return preMenu();
       }
 
+      const walletResponse = await axios.get(
+        `${BLOCKCHAIN_SERVER}wallets/${myWalletPublicKey}`
+      );
+      const balance = walletResponse.data.balance as number;
+      const fee = walletResponse.data.fee as number;
+      const utxo = walletResponse.data.utxo as TransactionOutput[];
+
+      if (balance < amount + fee) {
+        console.log("Insufficient funds");
+        return preMenu();
+      }
+
       const tx = new Transaction();
       tx.timestamp = Date.now();
-      tx.to = recipientPublicKey;
-      tx.type = TransactionType.REGULAR;
-      tx.txInput = new TransactionInput({
-        amount,
-        fromAddress: myWalletPublicKey,
-      } as TransactionInput);
+      tx.txOutputs = [
+        new TransactionOutput({
+          toAddress: recipientPublicKey,
+          amount,
+        } as TransactionOutput),
+      ];
 
-      tx.txInput.sign(myWalletPrivateKey);
+      tx.type = TransactionType.REGULAR;
+      tx.txInputs = [
+        new TransactionInput({
+          amount,
+          fromAddress: myWalletPublicKey,
+          previousTx: utxo[0].tx,
+        } as TransactionInput),
+      ];
+
+      tx.txInputs[0].sign(myWalletPrivateKey);
       tx.hash = tx.getHash();
+      tx.txOutputs[0].tx = tx.hash;
 
       try {
         const txResponde = await axios.post(

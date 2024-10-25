@@ -5,6 +5,7 @@ import Transaction from "./transaction";
 import TransactionType from "./transactionType";
 import TrasactionSearch from "./transactionSearch";
 import TransactionInput from "./transactionInput";
+import TransactionOutput from "./transactionOutput";
 /**
  * Blockchain class
  */
@@ -16,21 +17,36 @@ export default class Blockchain {
   static readonly DIFFICULTY_FACTOR = 5;
   static readonly MAX_DIFFICULTY = 62;
 
-  constructor() {
+  constructor(miner: string) {
+    this.blocks = [];
     this.mempool = [];
-    this.blocks = [
-      new Block({
-        index: this.nextIndex,
-        previousHash: "",
-        transactions: [
-          new Transaction({
-            type: TransactionType.FEE,
-            txInput: new TransactionInput(),
-          } as Transaction),
-        ],
-      } as Block),
-    ];
+
+    const genesis = this.createGenesis(miner);
+    this.blocks.push(genesis);
     this.nextIndex++;
+  }
+
+  createGenesis(miner: string): Block {
+    const amount = 10; //TODO calcular a recompensa
+
+    const tx = new Transaction({
+      type: TransactionType.FEE,
+      txOutputs: [
+        new TransactionOutput({
+          amount,
+          toAddress: miner,
+        } as TransactionOutput),
+      ],
+    } as Transaction);
+
+    tx.hash = tx.getHash();
+    tx.txOutputs[0].tx = tx.hash;
+
+    const block = new Block();
+    block.transactions = [tx];
+    block.mine(this.getDifficulty(), miner);
+
+    return block;
   }
 
   getLastBlock(): Block {
@@ -38,11 +54,13 @@ export default class Blockchain {
   }
 
   addBlock(block: Block): Validation {
-    const lastBlock = this.getLastBlock();
+    const nextBlock = this.getNextBlock();
+    if (!nextBlock) return new Validation(false, "There is no next block info");
+
     const validation = block.isValid(
-      lastBlock.hash,
-      lastBlock.index,
-      this.getDifficulty()
+      nextBlock.previousHash,
+      nextBlock.index - 1,
+      nextBlock.difficulty
     );
     if (!validation.success)
       return new Validation(false, `Invalid block: ${validation.message}`);
@@ -94,10 +112,12 @@ export default class Blockchain {
   }
 
   addTransaction(transaction: Transaction): Validation {
-    if (transaction.txInput) {
-      const from = transaction.txInput.fromAddress;
+    if (transaction.txInputs && transaction.txInputs.length) {
+      const from = transaction.txInputs[0].fromAddress;
       const pending = this.mempool
-        .map((tx) => tx.txInput)
+        .filter((tx) => tx.txInputs && tx.txInputs.length)
+        .map((tx) => tx.txInputs)
+        .flat()
         .filter((txInput) => txInput!.fromAddress === from);
       if (pending.length > 0) {
         return new Validation(

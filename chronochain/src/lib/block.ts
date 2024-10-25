@@ -63,7 +63,7 @@ export default class Block {
       if (feeTxs.length > 1)
         return new Validation(false, "Invalid fee transaction");
 
-      if (feeTxs[0].to !== this.miner)
+      if (feeTxs[0].txOutputs.some((txo) => txo.toAddress !== this.miner))
         return new Validation(
           false,
           "Invalid fee transaction: miner does not match"
@@ -85,7 +85,7 @@ export default class Block {
     if (this.transactions.length === 0)
       return new Validation(false, "Invalid data");
     if (this.timestamp < 1) return new Validation(false, "Invalid timestamp");
-    if (!this.nonce || !this.miner)
+    if (this.nonce < 1 || !this.miner)
       return new Validation(false, "Invalid miner");
 
     const prefix = new Array(difficulty + 1).join("0");

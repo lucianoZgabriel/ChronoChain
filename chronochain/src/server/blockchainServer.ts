@@ -1,11 +1,13 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import morgan from "morgan";
 import Blockchain from "../lib/blockchain";
 import Block from "../lib/block";
 import Transaction from "../lib/transaction";
+import Wallet from "../lib/wallet";
+import TransactionOutput from "../lib/transactionOutput";
 
 const app = express();
 const PORT = parseInt((process.env.PORT as string) || "3000");
@@ -16,7 +18,8 @@ if (process.argv.includes("--run")) app.use(morgan("tiny"));
 
 app.use(express.json());
 
-const blockchain = new Blockchain();
+const wallet = new Wallet(process.env.BLOCKCHAIN_WALLET);
+const blockchain = new Blockchain(wallet.publicKey);
 
 app.get("/status", (req, res, next) => {
   res.json({
@@ -85,10 +88,32 @@ app.post("/transactions", (req, res, next) => {
   }
 });
 
+app.get(
+  "/wallets/:wallet",
+  (req: Request, res: Response, next: NextFunction) => {
+    const wallet = req.params.wallet;
+
+    //TODO finish final version of UTXO
+    res.json({
+      balance: 10,
+      fee: blockchain.getFeePerTx(),
+      utxo: [
+        new TransactionOutput({
+          amount: 10,
+          toAddress: wallet,
+          tx: "abc",
+        } as TransactionOutput),
+      ],
+    });
+  }
+);
+
 /* c8 ignore start */
 if (process.argv.includes("--run"))
   app.listen(PORT, () => {
-    console.log(`Blockchain server is running on port ${PORT}`);
+    console.log(
+      `Blockchain server is running on port ${PORT} with wallet ${wallet.publicKey}`
+    );
   });
 /* c8 ignore end */
 
