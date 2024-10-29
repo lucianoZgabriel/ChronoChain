@@ -52,7 +52,8 @@ export default class Block {
   isValid(
     previousHash: string,
     previousIndex: number,
-    difficulty: number
+    difficulty: number,
+    feePerTx: number
   ): Validation {
     if (this.transactions && this.transactions.length) {
       const feeTxs = this.transactions.filter(
@@ -69,7 +70,13 @@ export default class Block {
           "Invalid fee transaction: miner does not match"
         );
 
-      const validation = this.transactions.map((tx) => tx.isValid());
+      const totalFees =
+        feePerTx *
+        this.transactions.filter((tx) => tx.type !== TransactionType.FEE)
+          .length;
+      const validation = this.transactions.map((tx) =>
+        tx.isValid(difficulty, totalFees)
+      );
       const errors = validation.filter((v) => !v.success).map((v) => v.message);
       if (errors.length > 0)
         return new Validation(
@@ -99,7 +106,7 @@ export default class Block {
     const block = new Block();
     block.index = blockInfo.index;
     block.previousHash = blockInfo.previousHash;
-    block.transactions = blockInfo.transactions;
+    block.transactions = blockInfo.transactions.map(tx => new Transaction(tx));
     return block;
   }
 }

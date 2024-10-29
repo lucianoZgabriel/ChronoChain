@@ -27,20 +27,13 @@ export default class Blockchain {
   }
 
   createGenesis(miner: string): Block {
-    const amount = 10; //TODO calcular a recompensa
-
-    const tx = new Transaction({
-      type: TransactionType.FEE,
-      txOutputs: [
-        new TransactionOutput({
-          amount,
-          toAddress: miner,
-        } as TransactionOutput),
-      ],
-    } as Transaction);
-
-    tx.hash = tx.getHash();
-    tx.txOutputs[0].tx = tx.hash;
+    const amount = Blockchain.getRewardAmout(this.getDifficulty());
+    const tx = Transaction.fromReward(
+      new TransactionOutput({
+        amount,
+        toAddress: miner,
+      } as TransactionOutput)
+    );
 
     const block = new Block();
     block.transactions = [tx];
@@ -60,7 +53,8 @@ export default class Blockchain {
     const validation = block.isValid(
       nextBlock.previousHash,
       nextBlock.index - 1,
-      nextBlock.difficulty
+      nextBlock.difficulty,
+      nextBlock.feePerTx
     );
     if (!validation.success)
       return new Validation(false, `Invalid block: ${validation.message}`);
@@ -125,9 +119,28 @@ export default class Blockchain {
           "There is a pending transaction from the same address"
         );
       }
-      //TODO: check if the address has enough balance
+
+      const utxo = this.getUtxo(from);
+      for (let i = 0; i < transaction.txInputs.length; i++) {
+        const txInput = transaction.txInputs[i];
+        if (
+          utxo.findIndex(
+            (txOutput) =>
+              txOutput.tx === txInput.previousTx &&
+              txOutput.amount >= txInput.amount
+          ) === -1
+        )
+          return new Validation(
+            false,
+            "Invalid transaction input: TXO not found or insufficient funds"
+          );
+      }
     }
-    const validation = transaction.isValid();
+
+    const validation = transaction.isValid(
+      this.getDifficulty(),
+      this.getFeePerTx()
+    );
     if (!validation.success)
       return new Validation(
         false,
@@ -151,7 +164,8 @@ export default class Blockchain {
       const validation = currentBlock.isValid(
         previousBlock.hash,
         previousBlock.index,
-        this.getDifficulty()
+        this.getDifficulty(),
+        this.getFeePerTx()
       );
       if (!validation.success)
         return new Validation(
@@ -183,5 +197,52 @@ export default class Blockchain {
       feePerTx,
       transactions,
     } as BlockInfo;
+  }
+
+  getTxInputs(wallet: string): (TransactionInput | undefined)[] {
+    return this.blocks
+      .map((b) => b.transactions)
+      .flat()
+      .filter((tx) => tx.txInputs && tx.txInputs.length)
+      .map((tx) => tx.txInputs)
+      .flat()
+      .filter((txInput) => txInput!.fromAddress === wallet);
+  }
+
+  getTxOutputs(wallet: string): TransactionOutput[] {
+    return this.blocks
+      .map((b) => b.transactions)
+      .flat()
+      .filter((tx) => tx.txOutputs && tx.txOutputs.length)
+      .map((tx) => tx.txOutputs)
+      .flat()
+      .filter((txOutput) => txOutput.toAddress === wallet);
+  }
+
+  getUtxo(wallet: string): TransactionOutput[] {
+    const txInputs = this.getTxInputs(wallet);
+    const txOutputs = this.getTxOutputs(wallet);
+
+    if (!txInputs || !txInputs.length) return txOutputs;
+
+    txInputs.forEach((txInput) => {
+      const index = txOutputs.findIndex(
+        (txOutput) => txOutput!.amount === txInput!.amount
+      );
+      txOutputs.splice(index, 1);
+    });
+
+    return txOutputs;
+  }
+
+  getBalance(wallet: string): number {
+    const utxo = this.getUtxo(wallet);
+    if (!utxo || !utxo.length) return 0;
+
+    return utxo.reduce((acc, txOutput) => acc + txOutput.amount, 0);
+  }
+
+  static getRewardAmout(difficulty: number): number {
+    return (64 - difficulty) * 10;
   }
 }

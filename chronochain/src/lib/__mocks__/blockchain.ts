@@ -2,9 +2,9 @@ import Block from "./block";
 import Validation from "../validation";
 import BlockInfo from "../blockInfo";
 import Transaction from "./transaction";
-import TransactionType from "../transactionType";
 import TransactionSearch from "../transactionSearch";
 import TransactionInput from "./transactionInput";
+import TransactionOutput from "./transactionOutput";
 /**
  * Blockchain class
  */
@@ -43,7 +43,7 @@ export default class Blockchain {
   }
 
   addTransaction(transaction: Transaction): Validation {
-    if (!transaction.isValid())
+    if (!transaction.isValid(1, 10))
       return new Validation(false, "Invalid transaction");
     this.mempool.push(transaction);
     return new Validation();
@@ -86,6 +86,35 @@ export default class Blockchain {
       difficulty: 1,
       feePerTx: this.getFeePerTx(),
       maxDifficulty: 62,
-    };
+    } as BlockInfo;
+  }
+
+  getTxInputs(wallet: string): (TransactionInput | undefined)[] {
+    return [
+      new TransactionInput({
+        amount: 10,
+        fromAddress: wallet,
+        previousTx: "abc",
+        signature: "abc",
+      } as TransactionInput),
+    ];
+  }
+
+  getTxOutputs(wallet: string): TransactionOutput[] {
+    return [
+      new TransactionOutput({
+        amount: 10,
+        toAddress: wallet,
+        tx: "abc",
+      } as TransactionOutput),
+    ];
+  }
+
+  getUtxo(wallet: string): TransactionOutput[] {
+    return this.getTxOutputs(wallet);
+  }
+
+  getBalance(wallet: string): number {
+    return 10;
   }
 }

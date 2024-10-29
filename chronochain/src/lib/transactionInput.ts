@@ -2,6 +2,7 @@ import * as ecc from "tiny-secp256k1";
 import ECPairFactory from "ecpair";
 import sha256 from "crypto-js/sha256";
 import Validation from "./validation";
+import TransactionOutput from "./transactionOutput";
 
 const ECpair = ECPairFactory(ecc);
 
@@ -32,7 +33,10 @@ export default class TransactionInput {
 
   isValid(): Validation {
     if (!this.previousTx || !this.signature)
-      return new Validation(false, "No signature or previous tx in this transaction input");
+      return new Validation(
+        false,
+        "No signature or previous tx in this transaction input"
+      );
     if (this.amount < 1)
       return new Validation(false, "Amount must be greater than 0");
 
@@ -45,5 +49,13 @@ export default class TransactionInput {
     return isValid
       ? new Validation()
       : new Validation(false, "Invalid signature");
+  }
+
+  static fromTxo(txo: TransactionOutput): TransactionInput {
+    return new TransactionInput({
+      amount: txo.amount,
+      fromAddress: txo.toAddress,
+      previousTx: txo.tx,
+    } as TransactionInput);
   }
 }

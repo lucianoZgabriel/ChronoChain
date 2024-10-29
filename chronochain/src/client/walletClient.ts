@@ -99,14 +99,17 @@ function restoreWallet() {
   });
 }
 
-function getBalance() {
+async function getBalance() {
   console.clear();
   if (!myWalletPublicKey) {
     console.log("You need to connect to a wallet first");
     return preMenu();
   }
 
-  //TODO get balance from the blockchain through the API
+  const { data } = await axios.get(
+    `${BLOCKCHAIN_SERVER}wallets/${myWalletPublicKey}`
+  );
+  console.log(`Balance: ${data.balance}`);
   preMenu();
 }
 
@@ -143,27 +146,40 @@ function sendTransaction() {
         return preMenu();
       }
 
-      const tx = new Transaction();
-      tx.timestamp = Date.now();
-      tx.txOutputs = [
+      const txInputs = utxo.map((txo) => TransactionInput.fromTxo(txo));
+      txInputs.forEach((txi, index, arr) =>
+        arr[index].sign(myWalletPrivateKey)
+      );
+
+      // Create the transaction
+      const txOutputs = [] as TransactionOutput[];
+      txOutputs.push(
         new TransactionOutput({
           toAddress: recipientPublicKey,
           amount,
-        } as TransactionOutput),
-      ];
+        } as TransactionOutput)
+      );
+      // Change output
+      const remainingBalance = balance - amount - fee;
+      if (remainingBalance > 0) {
+        txOutputs.push(
+          new TransactionOutput({
+            toAddress: myWalletPublicKey,
+            amount: remainingBalance,
+          } as TransactionOutput)
+        );
+      }
 
-      tx.type = TransactionType.REGULAR;
-      tx.txInputs = [
-        new TransactionInput({
-          amount,
-          fromAddress: myWalletPublicKey,
-          previousTx: utxo[0].tx,
-        } as TransactionInput),
-      ];
+      const tx = new Transaction({
+        txInputs,
+        txOutputs,
+      } as Transaction);
 
-      tx.txInputs[0].sign(myWalletPrivateKey);
       tx.hash = tx.getHash();
-      tx.txOutputs[0].tx = tx.hash;
+      tx.txOutputs.forEach((txo, index, arr) => (arr[index].tx = tx.hash));
+
+      console.log(tx);
+      console.log("Remaining balance: ", remainingBalance);
 
       try {
         const txResponde = await axios.post(

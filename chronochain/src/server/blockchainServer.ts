@@ -93,17 +93,14 @@ app.get(
   (req: Request, res: Response, next: NextFunction) => {
     const wallet = req.params.wallet;
 
-    //TODO finish final version of UTXO
+    const utxo = blockchain.getUtxo(wallet);
+    const balance = blockchain.getBalance(wallet);
+    const fee = blockchain.getFeePerTx();
+
     res.json({
-      balance: 10,
-      fee: blockchain.getFeePerTx(),
-      utxo: [
-        new TransactionOutput({
-          amount: 10,
-          toAddress: wallet,
-          tx: "abc",
-        } as TransactionOutput),
-      ],
+      utxo,
+      balance,
+      fee,
     });
   }
 );
